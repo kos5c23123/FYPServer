@@ -6,7 +6,7 @@ from firebase_admin import db
 from datetime import datetime
 import time
 
-cred = credentials.Certificate("assets/firebaseKey.json")
+cred = credentials.Certificate("firebaseKey.json")
 firebase_admin.initialize_app(cred,{
     'databaseURL' : 'https://ouhk-fyp-375a7.firebaseio.com/'
 })
