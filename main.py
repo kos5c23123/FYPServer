@@ -21,12 +21,12 @@ def CheckTime():
     NowMinute = datetime.today().strftime('%M')
     print(NowHour + ":" + NowMinute + ":" + NowSec)
     time.sleep(1)
+    if NowHour == '00' and NowMinute == '00' and NowSec == '00':
+        GetSun()
     if NowSec == '00':
         if NowMinute == '00' or NowMinute == '30':
             GetWeather()
             GetFuture()
-    if NowHour == '00' and NowMinute == '00' and NowSec == '00':
-        GetSun()
 
 def GetWeather():
     print("GetWeather:Start to send data to firebase!")
