@@ -10,8 +10,10 @@ cred = credentials.Certificate("firebaseKey.json")
 firebase_admin.initialize_app(cred,{
     'databaseURL' : 'https://ouhk-fyp-375a7.firebaseio.com/'
 })
-
-URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread"
+#本港地區天氣報告
+rhrread = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread"
+#九天天氣預報
+fnd = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd"
 
 def CheckTime():
     NowHour = datetime.today().strftime('%H')
@@ -19,21 +21,28 @@ def CheckTime():
     NowMinute = datetime.today().strftime('%M')
     print(NowHour + ":" + NowMinute + ":" + NowSec)
     time.sleep(1)
+    if NowHour == '00' and NowMinute == '00' and NowSec == '00':
+        GetSun()
     if NowSec == '00':
         if NowMinute == '00' or NowMinute == '30':
-            GetData()
+            GetWeather()
+            GetFuture()
 
-
-def GetData():
-    print("start to send data to firebase!")
+def GetWeather():
+    print("GetWeather:Start to send data to firebase!")
     NowDay = datetime.today().strftime('%Y-%m-%d')
     NowHour = datetime.today().strftime('%H')
     NowMinute = datetime.today().strftime('%M')
-    NowMinAndSec = (NowHour + ":" + NowMinute)  
-    req = requests.get(URL)
+    NowMinAndSec = (NowHour + ":" + NowMinute)
+    PassValue = []
+    Arraykey = ['HighTemp','LowTemp']
+    req = requests.get(rhrread)
     req_json = json.loads(req.text)
     Temp = req_json['temperature']['data']
     Rain = req_json['rainfall']['data']
+    HighValue = Temp[0]['value']
+    LowValue = Temp[0]['value']
+    ref2 = db.reference('/HK').child(NowDay)
     ref = db.reference('/HK').child(NowDay).child(NowMinAndSec)
     if req_json['uvindex'] == "":
         ref.set({
@@ -63,7 +72,81 @@ def GetData():
             'main' :Rain[x]['main'],
             'max' : Rain[x]['max']
             })
-    print("Finished Sending!")
+    snapshot = ref2.order_by_key().get()
+    for key, val in snapshot.items():
+        for x in range(len(Arraykey)):
+            if (key == Arraykey[x]):
+                PassValue.append(val)
+                Status  = "Exist"
+            else:
+                ref2.update({
+                    'HighTemp' : HighValue,
+                    'LowTemp' : LowValue
+                })
+                Status = "NotExist"
+    if Status == "Exist":
+        for x in range(len(Temp)):
+            nowValue = Temp[x]['value']
+            if (nowValue >= HighValue):
+                HighValue = nowValue
+            if (nowValue <= LowValue):
+                LowValue = nowValue
+        if HighValue <= PassValue[0]:
+            HighValue = PassValue[0]
+        if LowValue >= PassValue[1]:
+            LowValue = PassValue[1]
+        ref2.update({
+            'HighTemp' : HighValue,
+            'LowTemp' : LowValue
+        })
+    if Status == "NotExist":
+        for x in range(len(Temp)):
+            nowValue = Temp[x]['value']
+            if (nowValue >= HighValue):
+                HighValue = nowValue
+            if (nowValue <=LowValue):
+                LowValue = nowValue
+        ref2.update({
+            'HighTemp' : HighValue,
+            'LowTemp' : LowValue
+        })
+    print("GetWeather:Finished Sending!")
+
+def GetFuture():
+    print("GetFuture:Start to send data to firebase!")
+    req = requests.get(fnd)
+    req_json = json.loads(req.text)
+    futureWeather = req_json['weatherForecast']
+    DateArray = []
+    for x in range(len(futureWeather)):
+        DateArray.append(str(x))
+        ref = db.reference('/HK').child('Next7Days').child(DateArray[x])
+        ref.set({
+            'Date' : futureWeather[x]['forecastDate'],
+            'MaxTemp' : futureWeather[x]['forecastMaxtemp']['value'],
+            'MinTemp' : futureWeather[x]['forecastMintemp']['value'],
+            'icon' : futureWeather[x]['ForecastIcon']
+        })
+    print("GetFuture:Finished Sending!")
+
+def GetSun():
+    print("GetSun:Start to send data to firebase!")
+    Year = datetime.today().strftime('%Y')
+    Month = datetime.today().strftime('%m')
+    Day = datetime.today().strftime('%d')
+    #日落日出
+    SRS = "https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=" + Year + "&month=" + Month + "&day=" + Day + "&rformat=json"
+    req = requests.get(SRS)
+    req_json = json.loads(req.text)
+    Sun = req_json['data']
+    NowDay = datetime.today().strftime('%Y-%m-%d')
+    ref = db.reference('/HK').child(NowDay)
+    for x in range(len(Sun)):
+        ref.set({
+            'Up' : Sun[x][1],
+            'down' : Sun[x][3]
+        })
+    print("GetSun:Finished Sending!")
 
 while True:
     CheckTime()
