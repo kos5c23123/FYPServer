@@ -14,6 +14,10 @@ firebase_admin.initialize_app(cred,{
 rhrread = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread"
 #九天天氣預報
 fnd = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd"
+#天氣警告資訊
+warningInfo = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo"
+#未來48小時預報
+onecall = "https://api.openweathermap.org/data/2.5/onecall?lat=22.302711&lon=114.177216&%20exclude=hourly&appid=f6314d411a30b19cfa90cbff38eb503a&units=metric"
 
 def CheckTime():
     NowHour = datetime.today().strftime('%H')
@@ -27,6 +31,7 @@ def CheckTime():
         if NowMinute == '00' or NowMinute == '30':
             GetWeather()
             GetFuture()
+            Get48Future()
 
 def GetWeather():
     print("GetWeather:Start to send data to firebase!")
@@ -148,5 +153,29 @@ def GetSun():
         })
     print("GetSun:Finished Sending!")
 
+def Get48Future():
+    print("Get48Future:Start to send data to firebase!")
+    req = requests.get(onecall)
+    req_json = json.loads(req.text)
+    Temp = req_json['hourly']
+    DateArray = []
+    for x in range(len(Temp)):
+        DateArray.append(str(x))
+        ref = db.reference('/HK').child('Next48Hours').child(DateArray[x])
+        ref.update({
+            "temp" : int(Temp[x]['temp'])
+        })
+    print("Get48Future:Finished Sending!")
+
 while True:
     CheckTime()
+
+# reqwarninfo = requests.get(warningInfo)
+# reqwarninfo_json = json.loads(reqwarninfo.text)
+# warnStatusCode = []
+# if (reqwarninfo_json == {}):
+#     print("Yes")
+# else:
+#     warninfo = reqwarninfo_json['details']
+#     for x in range(len(warninfo)):
+#         warnStatusCode.append(warninfo[x]['warningStatementCode'])
