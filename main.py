@@ -21,6 +21,8 @@ fnd = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd"
 warningInfo = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo"
 #未來48小時預報
 onecall = "https://api.openweathermap.org/data/2.5/onecall?lat=22.302711&lon=114.177216&%20exclude=hourly&appid=f6314d411a30b19cfa90cbff38eb503a&units=metric"
+#天文台XML
+hkourl = "http://www.hko.gov.hk/wxinfo/json/one_json.xml"
 
 def CheckTime():
     NowHour = datetime.today().strftime('%H')
@@ -42,14 +44,10 @@ def GetWeather():
     NowHour = datetime.today().strftime('%H')
     NowMinute = datetime.today().strftime('%M')
     NowMinAndSec = (NowHour + ":" + NowMinute)
-    PassValue = []
-    Arraykey = ['HighTemp','LowTemp']
-    req = requests.get(rhrread)
-    req_json = json.loads(req.text)
+    req_json = requests.get(rhrread).json()
+    hkodata = requests.get(hkourl).json()
     Temp = req_json['temperature']['data']
     Rain = req_json['rainfall']['data']
-    HighValue = Temp[0]['value']
-    LowValue = Temp[0]['value']
     ref2 = db.reference('/HK').child(NowDay)
     ref = db.reference('/HK').child(NowDay).child(NowMinAndSec)
     if req_json['uvindex'] == "":
@@ -80,50 +78,15 @@ def GetWeather():
             'main' :Rain[x]['main'],
             'max' : Rain[x]['max']
             })
-    snapshot = ref2.order_by_key().get()
-    for key, val in snapshot.items():
-        for x in range(len(Arraykey)):
-            if (key == Arraykey[x]):
-                PassValue.append(val)
-                Status  = "Exist"
-            else:
-                ref2.update({
-                    'HighTemp' : HighValue,
-                    'LowTemp' : LowValue
-                })
-                Status = "NotExist"
-    if Status == "Exist":
-        for x in range(len(Temp)):
-            nowValue = Temp[x]['value']
-            if (nowValue >= HighValue):
-                HighValue = nowValue
-            if (nowValue <= LowValue):
-                LowValue = nowValue
-        if HighValue <= PassValue[0]:
-            HighValue = PassValue[0]
-        if LowValue >= PassValue[1]:
-            LowValue = PassValue[1]
-        ref2.update({
-            'HighTemp' : HighValue,
-            'LowTemp' : LowValue
-        })
-    if Status == "NotExist":
-        for x in range(len(Temp)):
-            nowValue = Temp[x]['value']
-            if (nowValue >= HighValue):
-                HighValue = nowValue
-            if (nowValue <=LowValue):
-                LowValue = nowValue
-        ref2.update({
-            'HighTemp' : HighValue,
-            'LowTemp' : LowValue
-        })
+    ref2.update({
+        "HighTemp" : hkodata['hko']['HomeMaxTemperature'],
+        "LowTemp" : hkodata['hko']['HomeMinTemperature']
+    })
     print("GetWeather:Finished Sending!")
 
 def GetFuture():
     print("GetFuture:Start to send data to firebase!")
-    req = requests.get(fnd)
-    req_json = json.loads(req.text)
+    req_json = requests.get(fnd).json()
     futureWeather = req_json['weatherForecast']
     DateArray = []
     for x in range(len(futureWeather)):
@@ -144,8 +107,7 @@ def GetSun():
     Day = datetime.today().strftime('%d')
     #日落日出
     SRS = "https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=" + Year + "&month=" + Month + "&day=" + Day + "&rformat=json"
-    req = requests.get(SRS)
-    req_json = json.loads(req.text)
+    req_json = requests.get(SRS).json()
     Sun = req_json['data']
     NowDay = datetime.today().strftime('%Y-%m-%d')
     ref = db.reference('/HK').child(NowDay)
@@ -158,8 +120,7 @@ def GetSun():
 
 def Get48Future():
     print("Get48Future:Start to send data to firebase!")
-    req = requests.get(onecall)
-    req_json = json.loads(req.text)
+    req_json = requests.get(onecall).json()
     NowHour = datetime.today().strftime('%H')
     IntNowHour = int(NowHour)
     Temp = req_json['hourly']
