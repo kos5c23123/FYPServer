@@ -9,7 +9,7 @@ import time
 DayTimeArray = []
 for x in range(24):
     DayTimeArray.append(x)
-cred = credentials.Certificate("firebaseKey.json")
+cred = credentials.Certificate("assets/firebaseKey.json")
 firebase_admin.initialize_app(cred,{
     'databaseURL' : 'https://ouhk-fyp-375a7.firebaseio.com/'
 })
@@ -168,7 +168,7 @@ def Get48Future():
         DateArray.append(str(x))
         ref = db.reference('/HK').child('Next48Hours').child(DateArray[x])
         ref.update({
-            'time' : DayTimeArray[IntNowHour % len(DayTimeArray)],
+            'time' : DayTimeArray[(IntNowHour+1) % len(DayTimeArray)],
             "temp" : int(Temp[x]['temp'])
         })
         IntNowHour += 1
