@@ -6,6 +6,9 @@ from firebase_admin import db
 from datetime import datetime
 import time
 
+DayTimeArray = []
+for x in range(24):
+    DayTimeArray.append(x)
 cred = credentials.Certificate("firebaseKey.json")
 firebase_admin.initialize_app(cred,{
     'databaseURL' : 'https://ouhk-fyp-375a7.firebaseio.com/'
@@ -157,14 +160,18 @@ def Get48Future():
     print("Get48Future:Start to send data to firebase!")
     req = requests.get(onecall)
     req_json = json.loads(req.text)
+    NowHour = datetime.today().strftime('%H')
+    IntNowHour = int(NowHour)
     Temp = req_json['hourly']
     DateArray = []
     for x in range(len(Temp)):
         DateArray.append(str(x))
         ref = db.reference('/HK').child('Next48Hours').child(DateArray[x])
         ref.update({
+            'time' : DayTimeArray[IntNowHour % len(DayTimeArray)],
             "temp" : int(Temp[x]['temp'])
         })
+        IntNowHour += 1
     print("Get48Future:Finished Sending!")
 
 while True:
