@@ -9,7 +9,7 @@ import time
 DayTimeArray = []
 for x in range(24):
     DayTimeArray.append(x)
-cred = credentials.Certificate("assets/firebaseKey.json")
+cred = credentials.Certificate("firebaseKey.json")
 firebase_admin.initialize_app(cred,{
     'databaseURL' : 'https://ouhk-fyp-375a7.firebaseio.com/'
 })
