@@ -37,6 +37,8 @@ def CheckTime():
             GetWeather()
             GetFuture()
             Get48Future()
+    if NowSec == '00' and NowMinute == '00':
+        getTotoalData()
 
 def GetWeather():
     print("GetWeather:Start to send data to firebase!")
@@ -81,17 +83,6 @@ def GetWeather():
     ref2.update({
         "HighTemp" : hkodata['hko']['HomeMaxTemperature'],
         "LowTemp" : hkodata['hko']['HomeMinTemperature']
-    })
-    Total = 0
-    snapshot2 = ref2.get()
-    PassRain = int(snapshot2['TotalRainFall'])
-    Total = PassRain
-    snapshot = ref.get()
-    for val in snapshot['rainfall']:
-        RainMax = int(snapshot['rainfall'][val]['max'])
-        Total += RainMax
-    ref2.update({
-        'TotalRainFall' : Total
     })
     print("GetWeather:Finished Sending!")
 
@@ -149,6 +140,25 @@ def Get48Future():
         IntNowHour += 1
     print("Get48Future:Finished Sending!")
 
+def getTotoalData():
+    NowDay = datetime.today().strftime('%Y-%m-%d')
+    NowHour = datetime.today().strftime('%H')
+    NowMinute = datetime.today().strftime('%M')
+    NowMinAndSec = (NowHour + ":" + NowMinute)
+    ref2 = db.reference('/HK').child(NowDay)
+    ref = db.reference('/HK').child(NowDay).child(NowMinAndSec)
+    Total = 0
+    snapshot2 = ref2.get()
+    PassRain = int(snapshot2['TotalRainFall'])
+    Total = PassRain
+    snapshot = ref.get()
+    for val in snapshot['rainfall']:
+        RainMax = int(snapshot['rainfall'][val]['max'])
+        Total += RainMax
+    ref2.update({
+        'TotalRainFall' : Total
+    })
+    
 while True:
     CheckTime()
 
