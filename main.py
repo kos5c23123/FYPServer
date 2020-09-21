@@ -37,7 +37,7 @@ def CheckTime():
             GetWeather()
             GetFuture()
             Get48Future()
-    if NowSec == '00' and NowMinute == '00':
+    if NowSec == '00' and NowMinute == '15':
         getTotoalData()
 
 def GetWeather():
