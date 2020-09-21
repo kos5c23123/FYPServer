@@ -143,10 +143,8 @@ def Get48Future():
 def getTotoalData():
     NowDay = datetime.today().strftime('%Y-%m-%d')
     NowHour = datetime.today().strftime('%H')
-    NowMinute = datetime.today().strftime('%M')
-    NowMinAndSec = (NowHour + ":" + NowMinute)
     ref2 = db.reference('/HK').child(NowDay)
-    ref = db.reference('/HK').child(NowDay).child(NowMinAndSec)
+    ref = db.reference('/HK').child(NowDay).child(NowHour + ':00')
     Total = 0
     snapshot2 = ref2.get()
     PassRain = int(snapshot2['TotalRainFall'])
