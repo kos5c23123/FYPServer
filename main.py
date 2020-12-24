@@ -37,8 +37,8 @@ def CheckTime():
             GetWeather()
             GetFuture()
             Get48Future()
-    if NowSec == '00' and NowMinute == '15':
-        getTotoalData()
+    # if NowSec == '00' and NowMinute == '15':
+    #     getTotoalData()
 
 def GetWeather():
     print("GetWeather:Start to send data to firebase!")
