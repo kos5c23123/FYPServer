@@ -17,7 +17,7 @@ warningInfo = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataT
 #天文台XML
 hkourl = "http://www.hko.gov.hk/wxinfo/json/one_json.xml"
 
-def CheckTime():
+def Timer():
     NowHour = datetime.today().strftime('%H')
     NowSec = datetime.today().strftime('%S')
     NowMinute = datetime.today().strftime('%M')
@@ -33,23 +33,23 @@ def GetWeather():
     NowHour = datetime.today().strftime('%H')
     NowMinute = datetime.today().strftime('%M')
     NowMinAndSec = (NowHour + ":" + NowMinute)
-    req_json = requests.get(rhrread).json()
+    hkoAPI_Data = requests.get(rhrread).json()
     hkodata = requests.get(hkourl).json()
-    Temp = req_json['temperature']['data']
-    Rain = req_json['rainfall']['data']
+    Temp = hkoAPI_Data['temperature']['data']
+    Rain = hkoAPI_Data['rainfall']['data']
     ref2 = db.reference('/HK').child(NowDay)
     ref = db.reference('/HK').child(NowDay).child(NowMinAndSec)
-    if req_json['uvindex'] == "":
+    if hkoAPI_Data['uvindex'] == "":
         ref.set({
-        'icon' : req_json['icon'],
+        'icon' : hkoAPI_Data['icon'],
         'UV' : 0,
-        'humidity' : req_json['humidity']['data'][0]['value']
+        'humidity' : hkoAPI_Data['humidity']['data'][0]['value']
     })
     else:
         ref.set({
-        'icon' : req_json['icon'],
-        'UV' : req_json['uvindex']['data'][0]['value'],
-        'humidity' : req_json['humidity']['data'][0]['value']
+        'icon' : hkoAPI_Data['icon'],
+        'UV' : hkoAPI_Data['uvindex']['data'][0]['value'],
+        'humidity' : hkoAPI_Data['humidity']['data'][0]['value']
     })
     for x in range(len(Temp)):
         ref.child('direct').child(Temp[x]['place']).set({
@@ -74,7 +74,7 @@ def GetWeather():
     print("GetWeather:Finished Sending!")
     
 while True:
-    CheckTime()
+    Timer()
 
 # reqwarninfo = requests.get(warningInfo).json()
 # warnStatusCode = []
